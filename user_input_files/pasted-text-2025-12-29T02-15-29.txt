@@ -1,0 +1,598 @@
+# 🔥 ARMADA PREMIUM SYSTEM - FULL BUILD SPECIFICATION
+
+## **System Overview: The Complete ARMADA Intelligence Dashboard**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    ARMADA COMMAND CENTER                     │
+│              Hemispheric Cultural Control Grid               │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                    ┌─────────┴─────────┐
+                    │   CLAUDE ENGINE   │
+                    │   (Your API Key)  │
+                    └─────────┬─────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+   ┌────▼────┐          ┌────▼────┐          ┌────▼────┐
+   │  SONG   │          │ REPORT  │          │VALIDATE │
+   │ ENGINE  │          │ ENGINE  │          │ ENGINE  │
+   └─────────┘          └─────────┘          └─────────┘
+```
+
+---
+
+# 📋 COMPLETE FEATURE SET
+
+## **Module 1: Song Generation Engine**
+- ✅ 12 Corridor Support (Jamaica, St. Lucia, Uganda, SA, Nigeria, Senegal, London, Paris, Seoul, Tokyo, Mumbai, USA, Colombia)
+- ✅ Hybrid Corridor Blending
+- ✅ 30 Emotional States
+- ✅ BPM/Genre Controls
+- ✅ ARM Score Display (≥0.85 target)
+- ✅ Full Structure (Intro/Verse/Chorus/Bridge/Outro)
+- ✅ Delivery Notes per Section
+- ✅ Suno/Udio Export Format
+- ✅ Real-time Validation Flags
+- ✅ Forbidden Structure Scanning
+
+## **Module 2: Cultural Intelligence Reports**
+- ✅ ILI Scoring (Institutional Legitimacy Index)
+- ✅ CPS Analysis (Compliance Propensity Score)
+- ✅ BFI Measurement (Barrier Friction Index)
+- ✅ NCB Mapping (Network Centrality & Bridge)
+- ✅ Corridor Harmonization Index
+- ✅ Diaspora Flow Analysis
+- ✅ Fashion-Music Matrix Correlation
+- ✅ FRMI Tracking (Fashion Resonance Mapping)
+
+## **Module 3: Validation Dashboard**
+- ✅ Real-time ARM Scoring
+- ✅ Governance Compliance Checks
+- ✅ Emotional Palette Analysis
+- ✅ Corridor Authenticity Scoring
+- ✅ Forbidden Structure Detection
+- ✅ Phrase Matrix Validation
+- ✅ Mutation Risk Assessment
+- ✅ Severity Heatmaps
+
+## **Module 4: Intervention Playbooks**
+- ✅ Behavioral Change Templates
+- ✅ Barrier Kit Recommendations
+- ✅ Messenger Optimization (ILI-based)
+- ✅ ACL Forecasting (Adoption→Compliance Lift)
+- ✅ CPA Calculations (Cost Per Action)
+- ✅ Timing Optimization
+
+## **Module 5: Export & Integration**
+- ✅ JSON Export
+- ✅ PDF Reports
+- ✅ Suno/Udio Format
+- ✅ Markdown Output
+- ✅ API Response Logging
+- ✅ Session History
+
+---
+
+# 🏗️ TECHNICAL STACK
+
+```javascript
+Frontend:  Next.js 14 + React 18 + TypeScript
+Styling:   Tailwind CSS + Shadcn/ui Components
+API:       Claude API (Sonnet 4.5)
+State:     Zustand + React Query
+Storage:   IndexedDB (browser-side)
+Charts:    Recharts + D3.js
+Export:    jsPDF + marked (markdown)
+```
+
+---
+
+# 📦 PROJECT STRUCTURE
+
+```
+armada-premium/
+├── app/
+│   ├── layout.tsx                 # Root layout
+│   ├── page.tsx                   # Home/Dashboard
+│   ├── song-engine/
+│   │   └── page.tsx              # Song generation interface
+│   ├── reports/
+│   │   └── page.tsx              # Cultural intelligence reports
+│   ├── validation/
+│   │   └── page.tsx              # Validation dashboard
+│   └── api/
+│       ├── claude/route.ts       # Claude API proxy
+│       └── generate/route.ts     # Generation endpoint
+├── components/
+│   ├── ui/                       # Shadcn components
+│   ├── SongGenerator.tsx
+│   ├── ValidationDashboard.tsx
+│   ├── ReportGenerator.tsx
+│   ├── CorridorSelector.tsx
+│   ├── EmotionalPalette.tsx
+│   ├── ARMScoreDisplay.tsx
+│   └── ExportPanel.tsx
+├── lib/
+│   ├── claude.ts                 # Claude API client
+│   ├── prompts/
+│   │   ├── song-generation.ts
+│   │   ├── validation.ts
+│   │   └── reports.ts
+│   ├── armada-knowledge.ts       # Knowledge base
+│   └── utils.ts
+├── types/
+│   └── armada.ts                 # TypeScript interfaces
+├── public/
+│   └── armada-docs/              # Your 51 files
+└── config/
+    └── corridors.ts              # Corridor configs
+```
+
+---
+
+# 🚀 PHASE-BY-PHASE BUILD INSTRUCTIONS
+
+## **PHASE 1: Project Initialization (5 minutes)**
+
+### Copy this EXACTLY into your terminal:
+
+```bash
+npx create-next-app@latest armada-premium --typescript --tailwind --app --no-src-dir --import-alias "@/*"
+cd armada-premium
+npm install zustand react-query @tanstack/react-query lucide-react recharts jspdf marked
+npx shadcn-ui@latest init -y
+npx shadcn-ui@latest add button card input textarea select tabs dialog badge alert
+```
+
+### Then tell Cline:
+
+```
+Create the following folder structure in the armada-premium project:
+
+app/song-engine/page.tsx
+app/reports/page.tsx  
+app/validation/page.tsx
+app/api/claude/route.ts
+app/api/generate/route.ts
+
+components/SongGenerator.tsx
+components/ValidationDashboard.tsx
+components/ReportGenerator.tsx
+components/CorridorSelector.tsx
+components/EmotionalPalette.tsx
+components/ARMScoreDisplay.tsx
+components/ExportPanel.tsx
+
+lib/claude.ts
+lib/prompts/song-generation.ts
+lib/prompts/validation.ts
+lib/prompts/reports.ts
+lib/armada-knowledge.ts
+lib/utils.ts
+
+types/armada.ts
+
+config/corridors.ts
+
+All files should be empty TypeScript/TSX files for now.
+Confirm when complete.
+```
+
+---
+
+## **PHASE 2: Type Definitions (Copy to types/armada.ts)**
+
+```typescript
+// types/armada.ts
+
+export type Corridor = 
+  | 'jamaica' | 'stlucia' | 'uganda' | 'southafrica' 
+  | 'nigeria' | 'senegal' | 'london' | 'paris' 
+  | 'seoul' | 'tokyo' | 'mumbai' | 'usa' | 'colombia';
+
+export type EmotionalState = 
+  | 'hype' | 'swagger' | 'grief' | 'romantic' | 'rage' 
+  | 'defiance' | 'spiritual' | 'joy' | 'pride' | 'resilience'
+  | 'melancholy' | 'nostalgia' | 'euphoria' | 'sorrow' | 'anger'
+  | 'fear' | 'tenderness' | 'excitement' | 'relaxation' | 'energy'
+  | 'contemplation' | 'triumph' | 'introspection' | 'rebellion' | 'serenity'
+  | 'vibrancy' | 'darkness' | 'passion' | 'somberness' | 'suspense';
+
+export interface SongRequest {
+  prompt: string;
+  corridor: Corridor | string; // Allow hybrid like "jamaica+uganda"
+  emotionalState: EmotionalState;
+  bpm: number;
+  genre?: string;
+  strictMode?: boolean;
+}
+
+export interface SongSection {
+  type: 'intro' | 'verse' | 'chorus' | 'bridge' | 'outro';
+  lyrics: string;
+  delivery: string;
+  armScore: number;
+}
+
+export interface SongResponse {
+  title: string;
+  sections: SongSection[];
+  overallArmScore: number;
+  corridorScore: number;
+  validationFlags: ValidationFlag[];
+  metadata: {
+    bpm: number;
+    genre: string;
+    corridor: string;
+    emotionalState: string;
+    generatedAt: string;
+  };
+}
+
+export interface ValidationFlag {
+  severity: 'low' | 'medium' | 'high';
+  type: 'novelty' | 'forbidden' | 'corridor' | 'mutation' | 'emotional' | 'governance';
+  message: string;
+  lineNumber?: number;
+}
+
+export interface CulturalReport {
+  ili: number; // 0-100
+  cps: number; // 0-1
+  bfi: number; // 0-1
+  ncb: number; // 0-1
+  corridorHarmonization: number; // 0-1
+  recommendations: string[];
+  insights: string[];
+}
+```
+
+---
+
+## **PHASE 3: Corridor Configuration (Copy to config/corridors.ts)**
+
+```typescript
+// config/corridors.ts
+
+export const CORRIDORS = {
+  jamaica: {
+    name: 'Jamaica',
+    language: 'Jamaican Patois',
+    emotionalTone: 'Bold and rhythmic, defiance with humor',
+    keyPhrases: ['mi', 'yuh', 'di', 'inna', 'yard'],
+    forbiddenWords: ['me', 'you', 'the', 'in'],
+    armThreshold: 0.85,
+  },
+  stlucia: {
+    name: 'St. Lucia',
+    language: 'Kwéyòl-English',
+    emotionalTone: 'Celebratory yet introspective',
+    keyPhrases: ['mwen', 'woy', 'fete', 'kay'],
+    armThreshold: 0.85,
+  },
+  uganda: {
+    name: 'Uganda',
+    language: 'Luganda-English',
+    emotionalTone: 'Resilient and communal',
+    keyPhrases: ['ndi', 'boda', 'matoke'],
+    armThreshold: 0.85,
+  },
+  // ... rest of corridors
+} as const;
+
+export const EMOTIONAL_STATES = {
+  hype: {
+    syllablePattern: '4-8 bursts',
+    pacing: 'fast',
+    vowels: 'short/clipped',
+    fields: ['fire', 'body', 'energy'],
+  },
+  // ... rest of emotional states
+} as const;
+```
+
+---
+
+## **PHASE 4: Claude API Client (Copy to lib/claude.ts)**
+
+```typescript
+// lib/claude.ts
+
+const CLAUDE_API_KEY = process.env.NEXT_PUBLIC_CLAUDE_API_KEY || '';
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+
+export async function callClaude(
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens: number = 4000
+): Promise<string> {
+  if (!CLAUDE_API_KEY) {
+    throw new Error('Claude API key not configured');
+  }
+
+  const response = await fetch(CLAUDE_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': CLAUDE_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: userPrompt,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Claude API error: ${error.error?.message || 'Unknown error'}`);
+  }
+
+  const data = await response.json();
+  return data.content[0].text;
+}
+```
+
+---
+
+## **PHASE 5: Song Generation Prompt (Copy to lib/prompts/song-generation.ts)**
+
+```typescript
+// lib/prompts/song-generation.ts
+
+import { SongRequest } from '@/types/armada';
+
+export function buildSongPrompt(request: SongRequest): string {
+  return `You are the ARMADA Song Engine, a hemispheric cultural intelligence system.
+
+CORE MANDATE:
+Generate a complete song following STRICT ARMADA governance:
+- ARM Score MUST be ≥0.85
+- Corridor authenticity MUST be maintained
+- Forbidden structures MUST be avoided
+- Emotional palette MUST align with request
+
+USER REQUEST:
+Prompt: ${request.prompt}
+Corridor: ${request.corridor}
+Emotional State: ${request.emotionalState}
+BPM: ${request.bpm}
+Genre: ${request.genre || 'auto-detect'}
+Strict Mode: ${request.strictMode ? 'ENABLED' : 'disabled'}
+
+CORRIDOR REQUIREMENTS for ${request.corridor.toUpperCase()}:
+${getCorridorRequirements(request.corridor)}
+
+EMOTIONAL STATE REQUIREMENTS for ${request.emotionalState.toUpperCase()}:
+${getEmotionalRequirements(request.emotionalState)}
+
+FORBIDDEN STRUCTURES:
+${getForbiddenStructures()}
+
+OUTPUT FORMAT (STRICT):
+Return a JSON object with this EXACT structure:
+{
+  "title": "Song Title",
+  "sections": [
+    {
+      "type": "intro",
+      "lyrics": "Actual lyrics here",
+      "delivery": "Detailed delivery instructions (vocal style, pacing, effects)",
+      "armScore": 0.XX
+    },
+    {
+      "type": "verse",
+      "lyrics": "Multi-line verse\nEach line on new line",
+      "delivery": "Verse delivery notes",
+      "armScore": 0.XX
+    },
+    {
+      "type": "chorus",
+      "lyrics": "Hook lyrics (≤8 syllables per line)",
+      "delivery": "Chorus delivery (must be chant-ready)",
+      "armScore": 0.XX
+    },
+    // ... more sections
+  ],
+  "overallArmScore": 0.XX,
+  "corridorScore": 0.XX,
+  "validationFlags": [
+    {
+      "severity": "low|medium|high",
+      "type": "corridor|emotional|forbidden",
+      "message": "Explanation",
+      "lineNumber": 3
+    }
+  ],
+  "metadata": {
+    "bpm": ${request.bpm},
+    "genre": "detected genre",
+    "corridor": "${request.corridor}",
+    "emotionalState": "${request.emotionalState}",
+    "generatedAt": "ISO timestamp"
+  }
+}
+
+CRITICAL RULES:
+1. Every line MUST include corridor-specific words
+2. ARM score ≥0.85 or REJECT and rewrite
+3. NO American TikTok slang (lit, sus, no cap, etc.)
+4. NO nursery rhyme patterns (ABAB simple)
+5. NO poverty porn or colonial gaze
+6. Chorus MUST be ≤8 syllables per line
+7. Delivery notes MUST be specific (not generic)
+
+Generate the song now as JSON:`;
+}
+
+function getCorridorRequirements(corridor: string): string {
+  const corridorMap: Record<string, string> = {
+    jamaica: `
+- Use Jamaican Patois: "mi", "yuh", "di", "inna", "yard"
+- Avoid Standard English: "me", "you", "the", "in"
+- Pacing: Fast, syncopated
+- Stress pattern: 3+3+2 or offbeat emphasis
+- Cultural anchors: zinc roof, duppy, lion, chain-break
+- Forbidden: Any colonial imagery`,
+    
+    stlucia: `
+- Use Kwéyòl strategically: ≤3 words per phrase
+- Orthography: Mannyè Ou Sa Li Èk Ékwi Kwéyòl (1999)
+- Examples: "mwen", "woy", "fete", "kay", "lajan"
+- Pacing: High energy (155-160 BPM range)
+- Cultural anchors: piton, carnival, sea-salt
+- Forbidden: French colonial terms`,
+    
+    // ... rest of corridors
+  };
+  
+  return corridorMap[corridor] || 'Standard cultural authenticity requirements apply.';
+}
+
+function getEmotionalRequirements(state: string): string {
+  const emotionalMap: Record<string, string> = {
+    hype: `
+- Syllables: 4-8 bursts
+- Pacing: Fast, urgent
+- Vowels: Short/clipped for punch
+- Pronouns: "we" for crowd focus
+- Semantic fields: fire, body, energy surges`,
+    
+    grief: `
+- Syllables: 8-12 sustained pours
+- Pacing: Slow, deliberate
+- Vowels: Long/open for depth
+- Pronouns: "I/they" for loss
+- Semantic fields: night, water (tears), ancestors`,
+    
+    // ... rest of emotional states
+  };
+  
+  return emotionalMap[state] || 'Neutral emotional baseline.';
+}
+
+function getForbiddenStructures(): string {
+  return `
+BANNED WORDS: lit, sus, on fleek, vibe check, no cap, flex, slay, queen/king (hype), 
+glow up, ghosted, canceled, periodt, tea, spill, yeet, finna, bussin
+
+BANNED RHYME PATTERNS:
+- ABAB nursery (heart/start/apart/smart)
+- Perfect rhymes without twist (love/dove/above/glove)
+- Lazy pairs (party/Bacardi, backpack/knapsack)
+
+BANNED NARRATIVES:
+- Poverty porn (slums → Lambos without nuance)
+- Colonial gaze (paradise island + barefoot poor)
+- Trauma dumping (vague abuse → quick flex)
+- Empty flexing (list luxuries, no stakes)
+`;
+}
+```
+
+---
+
+## **PHASE 6: API Routes**
+
+### Tell Cline to create these files:
+
+```typescript
+// app/api/claude/route.ts
+
+import { callClaude } from '@/lib/claude';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  try {
+    const { systemPrompt, userPrompt, maxTokens } = await request.json();
+    
+    const response = await callClaude(systemPrompt, userPrompt, maxTokens);
+    
+    return NextResponse.json({ response });
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+}
+```
+
+```typescript
+// app/api/generate/route.ts
+
+import { NextRequest, NextResponse } from 'next/server';
+import { buildSongPrompt } from '@/lib/prompts/song-generation';
+import { callClaude } from '@/lib/claude';
+import { SongRequest } from '@/types/armada';
+
+export async function POST(request: NextRequest) {
+  try {
+    const songRequest: SongRequest = await request.json();
+    
+    const prompt = buildSongPrompt(songRequest);
+    
+    const response = await callClaude(
+      'You are the ARMADA Song Engine. You respond ONLY in valid JSON format.',
+      prompt,
+      4000
+    );
+    
+    // Parse JSON response
+    const songData = JSON.parse(response);
+    
+    return NextResponse.json(songData);
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+}
+```
+
+---
+
+## **PHASE 7: Main Dashboard UI**
+
+### Tell Cline:
+
+```
+Create a dark-themed dashboard in app/page.tsx with:
+- Header: "ARMADA Command Center"
+- Three main cards linking to:
+  1. Song Engine (app/song-engine)
+  2. Cultural Reports (app/reports)
+  3. Validation (app/validation)
+- Stats display showing API status
+- Settings button for API key configuration
+
+Use Tailwind dark mode and Shadcn components.
+Make it look tactical and professional.
+```
+
+---
+
+## **PHASE 8: Song Generator Component**
+
+I'll continue with the complete component code in the next response. Should I proceed with:
+
+1. ✅ Complete SongGenerator component (full UI)
+2. ✅ ValidationDashboard component  
+3. ✅ ReportGenerator component
+4. ✅ All remaining components
+5. ✅ Environment setup instructions
+6. ✅ Final deployment checklist
+
+**Ready for me to continue with the full component implementations?** 
+
+Type "CONTINUE" and I'll give you the complete, copy-paste ready code for all remaining components. 🚀
