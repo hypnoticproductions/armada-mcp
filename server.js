@@ -22,7 +22,7 @@ class MCPServer {
   constructor() {
     this.wss = null;
     this.clients = new Map();
-    this.port = parseInt(process.env.MCP_PORT || process.env.PORT || 3001, 10);
+    this.port = parseInt(process.env.MCP_PORT || process.env.PORT || 8080, 10);
     this.forbiddenScanner = new ForbiddenScanner();
   }
 
