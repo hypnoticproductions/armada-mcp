@@ -94,6 +94,7 @@ export interface SongResponse {
     corridor: string;
     emotionalState: string;
     generatedAt: string;
+    [key: string]: unknown;
   };
 }
 
@@ -173,7 +174,7 @@ export interface CorridorConfig {
 
 export interface EmotionalConfig {
   syllablePattern: string;
-  pacing: 'slow' | 'moderate' | 'fast';
+  pacing: 'slow' | 'moderate' | 'fast' | 'moderate-fast' | 'moderate-slow' | 'variable';
   vowels: string;
   fields: string[];
 }

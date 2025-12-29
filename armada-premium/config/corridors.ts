@@ -155,13 +155,13 @@ export const EMOTIONAL_STATES: Record<string, EmotionalConfig> = {
   },
   defiance: {
     syllablePattern: '6-10 strong statements',
-    pacing: 'medium-fast',
+    pacing: 'moderate-fast',
     vowels: 'mixed',
     fields: ['stand', 'rise', 'unbreakable', 'resistance']
   },
   spiritual: {
     syllablePattern: '7-11 transcendent',
-    pacing: 'slow-moderate',
+    pacing: 'moderate-slow',
     vowels: 'open/expansive',
     fields: ['divine', 'ancestors', 'cosmic', 'prayer']
   },
@@ -318,8 +318,8 @@ export const PHASE_CONFIGS = [
   { id: 24, name: 'Economic Engine', description: 'Revenue optimization', critical: false },
   { id: 25, name: 'Legion Engine', description: 'Multi-personality generation', critical: false },
   { id: 26, name: 'Sphere Engine', description: 'Temporal alignment', critical: false },
-  { id: 27, name: 'Continental Engine', description: 'Geographic resonance', critical: false },
-],
+  { id: 27, name: 'Continental Engine', description: 'Geographic resonance', critical: false }
+];
 
 export const SYSTEM_CONFIG = {
   armThreshold: 0.85,

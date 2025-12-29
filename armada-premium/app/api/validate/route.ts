@@ -1,7 +1,7 @@
 // app/api/validate/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ValidationResult, ValidateOptions } from '@/types/armada';
+import { ValidationResult, ValidateOptions, PhaseResult } from '@/types/armada';
 import { PHASE_CONFIGS, SYSTEM_CONFIG } from '@/config/corridors';
 
 export async function POST(request: NextRequest) {
@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
       const startTime = Date.now();
       const phaseConfig = PHASE_CONFIGS.find(p => p.id === phaseNum);
       
-      const phaseResult = {
+      const phaseResult: PhaseResult = {
         phase: phaseNum,
         name: phaseConfig?.name || `Phase ${phaseNum}`,
-        status: 'running' as const,
+        status: 'running',
         duration: 0
       };
 
@@ -64,7 +64,12 @@ export async function POST(request: NextRequest) {
         
         // Add flags
         if (phaseValidation.flags) {
-          results.flags.push(...phaseValidation.flags.map(f => ({ ...f, phase: phaseNum })));
+          results.flags.push(...phaseValidation.flags.map(f => ({
+            ...f,
+            severity: f.severity as 'low' | 'medium' | 'high' | 'critical',
+            type: f.type as 'novelty' | 'forbidden' | 'corridor' | 'mutation' | 'emotional' | 'governance',
+            phase: phaseNum
+          })));
         }
 
         phaseResult.status = phaseValidation.ok ? 'passed' : 'failed';

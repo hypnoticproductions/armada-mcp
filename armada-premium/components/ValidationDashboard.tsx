@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { 
@@ -22,8 +23,10 @@ import {
   Search,
   Filter,
   Terminal,
+  Play,
   ChevronRight,
-  RefreshCw
+  RefreshCw,
+  Heart
 } from 'lucide-react';
 import { 
   RadarChart, 

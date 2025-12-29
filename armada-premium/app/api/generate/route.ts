@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       songData.validationFlags = songData.validationFlags || [];
       songData.metadata = songData.metadata || {
         bpm: songRequest.bpm,
-        genre: songData.metadata?.genre || 'auto-detected',
+        genre: songRequest.genre || 'auto-detected',
         corridor: songRequest.corridor,
         emotionalState: songRequest.emotionalState,
         generatedAt: new Date().toISOString()
