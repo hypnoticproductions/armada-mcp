@@ -1,0 +1,14 @@
+{
+  "$schema": "https://railway.app/schema.json",
+  "name": "armada-mcp",
+  "description": "ARMADA Model Context Protocol Validation Server",
+  "build": {
+    "builder": "NIXPACKS"
+  },
+  "deploy": {
+    "numReplicas": 1,
+    "restartPolicy": "onFailure",
+    "healthcheckPath": "/health",
+    "env": "auto"
+  }
+}
