@@ -1,0 +1,132 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262.1 83.3% 57.8%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262.1 83.3% 57.8%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(222.2 84% 4.9%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(217.2 32.6% 30%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(217.2 32.6% 40%);
+}
+
+/* Animation classes */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 5px hsl(262.1 83.3% 57.8% / 0.4); }
+  50% { box-shadow: 0 0 20px hsl(262.1 83.3% 57.8% / 0.6); }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Phase status colors */
+.phase-pending {
+  @apply text-slate-500 border-slate-700;
+}
+
+.phase-running {
+  @apply text-purple-400 border-purple-500 animate-pulse;
+}
+
+.phase-passed {
+  @apply text-emerald-400 border-emerald-500;
+}
+
+.phase-failed {
+  @apply text-red-400 border-red-500;
+}
+
+/* Terminal-like console styling */
+.console-output {
+  @apply font-mono text-sm bg-slate-950 p-4 rounded-lg overflow-auto;
+  max-height: 400px;
+}
+
+.console-line {
+  @apply py-0.5 px-2 border-l-2 border-transparent;
+}
+
+.console-line.info {
+  @apply border-blue-500 text-blue-400;
+}
+
+.console-line.success {
+  @apply border-emerald-500 text-emerald-400;
+}
+
+.console-line.warning {
+  @apply border-yellow-500 text-yellow-400;
+}
+
+.console-line.error {
+  @apply border-red-500 text-red-400;
+}
+
+.console-line.system {
+  @apply border-purple-500 text-purple-400;
+}
