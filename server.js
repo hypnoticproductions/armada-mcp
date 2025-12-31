@@ -515,10 +515,11 @@ class MCPServer {
     return `${corridor.toUpperCase()}! ${emotionalState.toUpperCase()}!\nWe stand together, culture unbroken`;
   }
 
-  handleGetCorridors(ws) {
+  handleGetCorridors(ws, id) {
     this.send(ws, {
       type: 'corridors',
-      corridors: CORRIDORS
+      id,
+      corridors: Object.keys(CORRIDORS)
     });
   }
 
