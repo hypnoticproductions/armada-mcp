@@ -12,7 +12,7 @@ All Railway deployment requirements validated and verified. No blocking issues.
 
 ### ✅ **All Items Completed:**
 
-- [x] Dockerfile configured with correct health check port (8081)
+- [x] Dockerfile configured with correct health check port (same as main PORT)
 - [x] railway.json configured with health check path
 - [x] package.json has start script
 - [x] Environment variables properly configured
@@ -134,7 +134,7 @@ Railway Health Check Flow:
           ▼
 ┌─────────────────────┐
 │ HTTP GET Request    │
-│ http://localhost:8081/health
+│ http://localhost:8080/health
 └─────────┬───────────┘
           │
           ▼
@@ -150,10 +150,10 @@ Railway Health Check Flow:
 ```dockerfile
 # Dockerfile - HEALTHCHECK
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8081/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+  CMD node -e "require('http').get('http://localhost:8080/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 ```
 
-**Note:** Health check is on **PORT + 1** (8081), not the main WebSocket port!
+**Note:** Health check and WebSocket are on the **same PORT** (8080). The HTTP server handles both HTTP requests and WebSocket upgrades.
 
 ---
 
@@ -166,7 +166,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 const port = parseInt(process.env.PORT || 8080, 10);
 
 // WebSocket server:  PORT (e.g., 8080)
-// Health endpoint:   PORT + 1 (e.g., 8081)
+// Health endpoint:   Same PORT (e.g., 8080)
 ```
 
 ### **Railway Port Assignment:**
@@ -177,7 +177,7 @@ Railway will set `PORT` dynamically (usually to a high port like `3000`, `8080`,
 ```
 If Railway sets PORT=10000:
 - WebSocket server → wss://your-app.railway.app (internal: 10000)
-- Health check → http://localhost:10001/health (internal only)
+- Health check → http://localhost:10000/health (internal only, same port)
 ```
 
 ---
@@ -198,9 +198,9 @@ railway logs
 ```
 [ARMADA MCP] Server starting on port <PORT>
 [ARMADA MCP] Environment: production
-[ARMADA MCP] Server ready and listening
+[ARMADA MCP] Server listening on port <PORT>
 [ARMADA MCP] WebSocket endpoint: ws://localhost:<PORT>
-[ARMADA MCP] Health check server on port <PORT+1>
+[ARMADA MCP] Health check endpoint: http://localhost:<PORT>/health
 ```
 
 ### **2. Test Health Endpoint**
@@ -258,15 +258,15 @@ In Railway Dashboard:
 
 **Solutions:**
 1. Check logs for startup errors
-2. Verify health endpoint is responding: `curl http://localhost:8081/health` (from within container)
+2. Verify health endpoint is responding: `curl http://localhost:8080/health` (from within container)
 3. Ensure PORT environment variable is set
-4. Check that health server starts on PORT + 1
+4. Check that server starts on the main PORT
 
 **Debug Command:**
 ```bash
 railway run bash
 # Inside container:
-curl http://localhost:8081/health
+curl http://localhost:8080/health
 ```
 
 ---
@@ -302,7 +302,7 @@ wscat -c wss://your-app.railway.app
 ```bash
 # Test Docker build locally
 docker build -t armada-mcp-test .
-docker run -p 8080:8080 -p 8081:8081 armada-mcp-test
+docker run -p 8080:8080 armada-mcp-test
 ```
 
 ---
