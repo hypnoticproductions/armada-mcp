@@ -8,9 +8,11 @@ class MCPClient {
     this.messageQueue = [];
     this.handlers = new Map();
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 1000;
+    this.maxReconnectAttempts = options.maxReconnectAttempts || 5;
+    this.reconnectDelay = options.reconnectDelay || 1000;
+    this.requestTimeout = options.requestTimeout || 30000; // 30 second default timeout
     this.isConnected = false;
+    this.onReconnectFailed = options.onReconnectFailed || null;
   }
 
   /**
@@ -46,10 +48,20 @@ class MCPClient {
         this.ws.onclose = (event) => {
           console.log(`[MCP Client] Disconnected: ${event.code} - ${event.reason}`);
           this.isConnected = false;
-          
+
           // Attempt reconnection
           if (this.reconnectAttempts < this.maxReconnectAttempts) {
             this.scheduleReconnect();
+          } else {
+            // Reconnection attempts exhausted
+            const error = new Error(`Max reconnection attempts (${this.maxReconnectAttempts}) exceeded`);
+            console.error('[MCP Client]', error.message);
+            this.emit('reconnect-failed', error);
+
+            // Call user-provided callback if exists
+            if (this.onReconnectFailed) {
+              this.onReconnectFailed(error);
+            }
           }
         };
 
@@ -85,8 +97,13 @@ class MCPClient {
    */
   processQueue() {
     while (this.messageQueue.length > 0) {
-      const { action, params, resolve } = this.messageQueue.shift();
-      this.send(action, params).then(resolve).catch(err => console.error(err));
+      const { action, params, resolve, reject } = this.messageQueue.shift();
+      this.send(action, params)
+        .then(resolve)
+        .catch(err => {
+          console.error('[MCP Client] Queue processing error:', err);
+          reject(err); // Properly propagate error to caller
+        });
     }
   }
 
@@ -97,16 +114,39 @@ class MCPClient {
     return new Promise((resolve, reject) => {
       const id = this.generateId();
 
-      // Store handler for response
-      this.handlers.set(id, { resolve, reject, action });
+      // Set up timeout to prevent memory leaks
+      const timeoutId = setTimeout(() => {
+        const handler = this.handlers.get(id);
+        if (handler) {
+          this.handlers.delete(id);
+          const error = new Error(`Request timeout for action: ${action} (${this.requestTimeout}ms)`);
+          reject(error);
+        }
+      }, this.requestTimeout);
+
+      // Store handler for response with cleanup
+      this.handlers.set(id, {
+        resolve: (value) => {
+          clearTimeout(timeoutId);
+          this.handlers.delete(id);
+          resolve(value);
+        },
+        reject: (err) => {
+          clearTimeout(timeoutId);
+          this.handlers.delete(id);
+          reject(err);
+        },
+        action,
+        timeoutId
+      });
 
       const message = { id, action, params };
 
       if (this.isConnected && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify(message));
       } else {
-        // Queue message for later
-        this.messageQueue.push({ action, params, resolve });
+        // Queue message for later (include reject for error propagation)
+        this.messageQueue.push({ action, params, resolve, reject });
       }
     });
   }
@@ -199,12 +239,39 @@ class MCPClient {
     if (!this.eventListeners) {
       this.eventListeners = new Map();
     }
-    
+
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
-    
+
     this.eventListeners.get(event).push(callback);
+  }
+
+  /**
+   * Unsubscribe from events
+   */
+  off(event, callback) {
+    if (!this.eventListeners || !this.eventListeners.has(event)) {
+      return;
+    }
+
+    if (!callback) {
+      // Remove all listeners for this event
+      this.eventListeners.delete(event);
+      return;
+    }
+
+    // Remove specific callback
+    const listeners = this.eventListeners.get(event);
+    const index = listeners.indexOf(callback);
+    if (index > -1) {
+      listeners.splice(index, 1);
+    }
+
+    // Clean up empty listener arrays
+    if (listeners.length === 0) {
+      this.eventListeners.delete(event);
+    }
   }
 
   /**
@@ -221,10 +288,30 @@ class MCPClient {
    */
   disconnect() {
     if (this.ws) {
+      // Clean up all pending handlers
+      this.handlers.forEach(handler => {
+        if (handler.timeoutId) {
+          clearTimeout(handler.timeoutId);
+        }
+        if (handler.reject) {
+          handler.reject(new Error('Client disconnected'));
+        }
+      });
+      this.handlers.clear();
+
+      // Clear event listeners
+      if (this.eventListeners) {
+        this.eventListeners.clear();
+      }
+
+      // Clear message queue
+      this.messageQueue = [];
+
+      // Close WebSocket
       this.ws.close();
       this.ws = null;
       this.isConnected = false;
-      console.log('[MCP Client] Disconnected');
+      console.log('[MCP Client] Disconnected and cleaned up');
     }
   }
 

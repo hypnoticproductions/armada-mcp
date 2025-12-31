@@ -2,6 +2,18 @@
 // ARM score calculation algorithms
 
 /**
+ * Validate score value (ensure it's a finite number between 0 and 1)
+ */
+function validateScore(score, scoreName = 'score') {
+  if (typeof score !== 'number' || !isFinite(score)) {
+    console.error(`[Scoring] Invalid ${scoreName}:`, score, '- returning 0');
+    return 0;
+  }
+  // Clamp to valid range [0, 1]
+  return Math.max(0, Math.min(1, score));
+}
+
+/**
  * Calculate overall ARM score from individual scores
  */
 function calculateArmScore(scores) {
@@ -24,7 +36,8 @@ function calculateArmScore(scores) {
     }
   }
 
-  return totalWeight > 0 ? totalScore / totalWeight : 0;
+  const rawScore = totalWeight > 0 ? totalScore / totalWeight : 0;
+  return validateScore(rawScore, 'ARM score');
 }
 
 /**
@@ -53,21 +66,27 @@ function calculateCorridorScore(content, corridor) {
   const patterns = corridorPatterns[corridor] || [];
   if (patterns.length === 0) return 0.5;
 
-  const foundPatterns = patterns.filter(pattern => 
+  const foundPatterns = patterns.filter(pattern =>
     lowerContent.includes(pattern.toLowerCase())
   );
 
-  return Math.min(foundPatterns.length / patterns.length + 0.3, 1.0);
+  const rawScore = Math.min(foundPatterns.length / patterns.length + 0.3, 1.0);
+  return validateScore(rawScore, 'corridor score');
 }
 
 /**
  * Calculate novelty score (uniqueness of content)
  */
 function calculateNoveltyScore(content) {
-  const words = content.toLowerCase().split(/\s+/);
+  const words = content.toLowerCase().split(/\s+/).filter(w => w.length > 0);
   const wordCount = words.length;
-  
-  if (wordCount < 5) return 0.5;
+
+  // Better handling for short content
+  if (wordCount < 5) {
+    console.warn('[Scoring] Content too short for novelty analysis:', wordCount, 'words');
+    // Return default score with warning flag
+    return validateScore(0.5, 'novelty score (short content)');
+  }
 
   // Calculate word diversity
   const uniqueWords = new Set(words);
@@ -84,8 +103,9 @@ function calculateNoveltyScore(content) {
   }
 
   const repetitionPenalty = Math.min(repeatedPhrases.length / 10, 0.3);
+  const rawScore = Math.max(diversityScore - repetitionPenalty, 0);
 
-  return Math.max(diversityScore - repetitionPenalty, 0);
+  return validateScore(rawScore, 'novelty score');
 }
 
 /**
@@ -111,9 +131,9 @@ function calculateEmotionalScore(content, emotionalState) {
   const negativeCount = patterns.negative.filter(w => lowerContent.includes(w)).length;
 
   const totalPatterns = patterns.positive.length + patterns.negative.length;
-  const score = (positiveCount * 2 - negativeCount) / totalPatterns + 0.5;
+  const rawScore = (positiveCount * 2 - negativeCount) / totalPatterns + 0.5;
 
-  return Math.max(0, Math.min(1, score));
+  return validateScore(rawScore, 'emotional score');
 }
 
 module.exports = {

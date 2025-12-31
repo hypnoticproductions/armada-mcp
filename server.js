@@ -22,8 +22,53 @@ class MCPServer {
   constructor() {
     this.wss = null;
     this.clients = new Map();
+    this.inFlightOperations = new Map(); // Track async operations
+    this.requestCounts = new Map(); // For rate limiting
     this.port = parseInt(process.env.MCP_PORT || process.env.PORT || 8080, 10);
     this.forbiddenScanner = new ForbiddenScanner();
+    this.httpServer = null; // Store HTTP server reference
+  }
+
+  /**
+   * Validate corridor parameter
+   */
+  validateCorridor(corridor) {
+    const validCorridors = Object.keys(CORRIDORS);
+    if (!corridor || typeof corridor !== 'string') {
+      throw new Error('Corridor parameter is required and must be a string');
+    }
+    if (!validCorridors.includes(corridor)) {
+      throw new Error(`Invalid corridor: ${corridor}. Valid options: ${validCorridors.join(', ')}`);
+    }
+    return corridor;
+  }
+
+  /**
+   * Safe string operation helper
+   */
+  safeStringOp(str, defaultValue = 'unknown') {
+    return (str && typeof str === 'string') ? str : defaultValue;
+  }
+
+  /**
+   * Send standardized error response
+   */
+  sendError(ws, error, id = null) {
+    const errorResponse = {
+      type: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message || error,
+    };
+
+    if (id) {
+      errorResponse.id = id;
+    }
+
+    if (error.code) {
+      errorResponse.code = error.code;
+    }
+
+    this.send(ws, errorResponse);
   }
 
   start() {
@@ -35,13 +80,13 @@ class MCPServer {
 
     // Create HTTP server for health checks
     const http = require('http');
-    const server = http.createServer((req, res) => {
+    this.httpServer = http.createServer((req, res) => {
       if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'healthy', uptime: process.uptime() }));
       } else if (req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ 
+        res.end(JSON.stringify({
           name: 'ARMADA MCP Server',
           version: '1.0.0',
           status: 'running',
@@ -53,7 +98,22 @@ class MCPServer {
       }
     });
 
-    server.listen(this.port + 1, () => {
+    // Add error handler for HTTP server
+    this.httpServer.on('error', (error) => {
+      if (error.code === 'EADDRINUSE') {
+        console.error(`[ARMADA MCP] Health check port ${this.port + 1} already in use`);
+        console.log('[ARMADA MCP] Trying alternative port...');
+        // Try next port
+        setTimeout(() => {
+          this.httpServer.listen(this.port + 2);
+        }, 1000);
+      } else {
+        console.error('[ARMADA MCP] HTTP server error:', error);
+        throw error;
+      }
+    });
+
+    this.httpServer.listen(this.port + 1, () => {
       console.log(`[ARMADA MCP] Health check server on port ${this.port + 1}`);
     });
 
@@ -72,15 +132,32 @@ class MCPServer {
 
       // Handle incoming messages
       ws.on('message', async (data) => {
+        const operationId = uuidv4();
+        let message;
+
+        // Parse JSON with proper error handling
         try {
-          const message = JSON.parse(data.toString());
+          message = JSON.parse(data.toString());
+        } catch (error) {
+          console.error('[ARMADA MCP] Invalid JSON received:', error.message);
+          this.sendError(ws, { message: 'Invalid JSON format', code: 'PARSE_ERROR' });
+          return; // Don't process further
+        }
+
+        // Track in-flight operation
+        this.inFlightOperations.set(operationId, { clientId, startTime: Date.now() });
+
+        try {
           await this.handleMessage(clientId, ws, message);
         } catch (error) {
-          console.error(`[ARMADA MCP] Error processing message:`, error);
-          this.send(ws, {
-            type: 'error',
-            error: error.message
-          });
+          console.error('[ARMADA MCP] Error processing message:', error);
+          // Only send error if connection still open
+          if (ws.readyState === WebSocket.OPEN) {
+            this.sendError(ws, error, message?.id);
+          }
+        } finally {
+          // Clean up operation tracking
+          this.inFlightOperations.delete(operationId);
         }
       });
 
@@ -102,7 +179,22 @@ class MCPServer {
   }
 
   async handleMessage(clientId, ws, message) {
-    const { action, id, params } = message;
+    // Validate message structure
+    if (!message || typeof message !== 'object') {
+      throw new Error('Invalid message format: message must be an object');
+    }
+
+    const { action, id, params = {} } = message;
+
+    // Validate action
+    if (!action || typeof action !== 'string') {
+      throw new Error('Message must include valid action string');
+    }
+
+    // Validate params is an object (if provided)
+    if (params && typeof params !== 'object') {
+      throw new Error('Message params must be an object');
+    }
 
     console.log(`[ARMADA MCP] Received ${action} from ${clientId}`);
 
@@ -120,7 +212,7 @@ class MCPServer {
         break;
 
       case 'getCorridors':
-        this.handleGetCorridors(ws);
+        this.handleGetCorridors(ws, id);
         break;
 
       case 'ping':
@@ -128,16 +220,46 @@ class MCPServer {
         break;
 
       default:
-        this.send(ws, {
-          type: 'error',
-          id,
-          error: `Unknown action: ${action}`
-        });
+        this.sendError(ws, new Error(`Unknown action: ${action}`), id);
     }
   }
 
   async handleValidation(clientId, ws, id, params) {
+    // Validate params exists
+    if (!params || typeof params !== 'object') {
+      throw new Error('Validation params are required');
+    }
+
     const { content, corridor, emotionalState, runPhases } = params;
+
+    // Validate required fields
+    if (!content || typeof content !== 'string') {
+      throw new Error('content is required and must be a string');
+    }
+
+    // Input size limit (100KB)
+    const MAX_CONTENT_SIZE = 100000;
+    if (content.length > MAX_CONTENT_SIZE) {
+      throw new Error(`Content exceeds maximum size of ${MAX_CONTENT_SIZE} characters`);
+    }
+
+    // Rate limiting (10 requests per minute per client)
+    const MAX_REQUESTS_PER_MINUTE = 10;
+    const clientRequests = this.requestCounts.get(clientId) || [];
+    const now = Date.now();
+    const recentRequests = clientRequests.filter(t => now - t < 60000); // Last minute
+
+    if (recentRequests.length >= MAX_REQUESTS_PER_MINUTE) {
+      throw new Error('Rate limit exceeded. Please slow down.');
+    }
+
+    recentRequests.push(now);
+    this.requestCounts.set(clientId, recentRequests);
+
+    // Validate corridor if provided
+    if (corridor) {
+      this.validateCorridor(corridor);
+    }
 
     console.log(`[ARMADA MCP] Starting validation: corridor=${corridor}, phases=${runPhases?.length || 'all'}`);
 
@@ -209,10 +331,49 @@ class MCPServer {
         phaseResult.score = phaseValidation.score;
         phaseResult.modifications = phaseValidation.modifications;
 
+        // Check if critical phase failed - stop execution
+        if (phaseConfig?.critical && !phaseValidation.ok) {
+          console.error(`[ARMADA MCP] Critical phase ${phaseNum} failed - stopping execution`);
+          result.status = 'failed';
+          result.error = `Critical phase ${phaseNum} (${phaseConfig.name}) failed: ${phaseValidation.error || 'Validation failed'}`;
+
+          phaseResult.duration = Date.now() - startTime;
+          result.phaseResults.push(phaseResult);
+
+          // Send phase completed before stopping
+          this.send(ws, {
+            type: 'phaseCompleted',
+            id,
+            phase: phaseNum,
+            result: phaseResult
+          });
+
+          break; // Stop processing further phases
+        }
+
       } catch (error) {
         phaseResult.status = 'failed';
         phaseResult.error = error.message;
         console.error(`[ARMADA MCP] Phase ${phaseNum} error:`, error);
+
+        // If critical phase throws error, stop execution
+        if (phaseConfig?.critical) {
+          result.status = 'failed';
+          result.error = `Critical phase ${phaseNum} error: ${error.message}`;
+
+          phaseResult.duration = Date.now() - startTime;
+          result.phaseResults.push(phaseResult);
+
+          // Send phase completed before stopping
+          this.send(ws, {
+            type: 'phaseCompleted',
+            id,
+            phase: phaseNum,
+            result: phaseResult
+          });
+
+          break; // Stop on critical phase error
+        }
       }
 
       phaseResult.duration = Date.now() - startTime;
@@ -311,8 +472,11 @@ class MCPServer {
   }
 
   generateSongStructure(corridor, emotionalState, bpm) {
+    const safeCorridor = this.safeStringOp(corridor);
+    const safeEmotionalState = this.safeStringOp(emotionalState);
+
     return {
-      title: `${corridor.charAt(0).toUpperCase() + corridor.slice(1)} ${emotionalState.charAt(0).toUpperCase() + emotionalState.slice(1)}`,
+      title: `${safeCorridor.charAt(0).toUpperCase() + safeCorridor.slice(1)} ${safeEmotionalState.charAt(0).toUpperCase() + safeEmotionalState.slice(1)}`,
       sections: [
         {
           type: 'intro',
@@ -522,11 +686,25 @@ class MCPServer {
   }
 
   phasePhraseMatrix(content, corridor) {
+    // Validate corridor parameter
+    try {
+      this.validateCorridor(corridor);
+    } catch (error) {
+      return {
+        ok: false,
+        score: 0,
+        line: content,
+        scores: {},
+        flags: [{
+          severity: 'error',
+          type: 'validation',
+          message: error.message
+        }]
+      };
+    }
+
     // Check for corridor-specific phrase usage
     const corridorConfig = CORRIDORS[corridor];
-    if (!corridorConfig) {
-      return { ok: true, score: 1.0, line: content, scores: {}, flags: [] };
-    }
 
     const keyPhrases = corridorConfig.keyPhrases || [];
     const foundPhrases = keyPhrases.filter(phrase => 
@@ -577,13 +755,32 @@ class MCPServer {
   }
 
   phaseStrictEnforcer(content, corridor) {
+    // Validate corridor parameter
+    try {
+      this.validateCorridor(corridor);
+    } catch (error) {
+      return {
+        ok: false,
+        score: 0,
+        line: content,
+        scores: {},
+        flags: [{
+          severity: 'error',
+          type: 'validation',
+          message: error.message
+        }]
+      };
+    }
+
     // Strict mode validation
     const corridorConfig = CORRIDORS[corridor];
     const forbiddenWords = corridorConfig?.forbiddenWords || [];
 
-    const foundForbidden = forbiddenWords.filter(word => 
-      new RegExp(`\\b${word}\\b`, 'i').test(content)
-    );
+    // Escape special regex characters to prevent injection
+    const foundForbidden = forbiddenWords.filter(word => {
+      const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return new RegExp(`\\b${escapedWord}\\b`, 'i').test(content);
+    });
 
     return {
       ok: foundForbidden.length === 0,
@@ -673,19 +870,63 @@ class MCPServer {
       this.send(client, data);
     });
   }
+
+  async gracefulShutdown() {
+    console.log('[ARMADA MCP] Initiating graceful shutdown...');
+
+    // Stop accepting new connections
+    if (this.wss) {
+      this.wss.close(() => {
+        console.log('[ARMADA MCP] WebSocket server closed');
+      });
+    }
+
+    // Notify all clients about shutdown
+    this.clients.forEach((clientInfo, clientId) => {
+      if (clientInfo.ws.readyState === WebSocket.OPEN) {
+        this.send(clientInfo.ws, {
+          type: 'server-shutdown',
+          message: 'Server is shutting down gracefully'
+        });
+      }
+    });
+
+    // Wait for in-flight operations to complete (max 5 seconds)
+    const timeout = 5000;
+    const startTime = Date.now();
+    while (this.inFlightOperations.size > 0 && Date.now() - startTime < timeout) {
+      console.log(`[ARMADA MCP] Waiting for ${this.inFlightOperations.size} operations to complete...`);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    if (this.inFlightOperations.size > 0) {
+      console.warn(`[ARMADA MCP] ${this.inFlightOperations.size} operations did not complete within timeout`);
+    }
+
+    // Close all client connections
+    this.clients.forEach((clientInfo) => {
+      if (clientInfo.ws.readyState === WebSocket.OPEN) {
+        clientInfo.ws.close();
+      }
+    });
+    this.clients.clear();
+
+    // Close HTTP server
+    if (this.httpServer) {
+      this.httpServer.close(() => {
+        console.log('[ARMADA MCP] HTTP server closed');
+      });
+    }
+
+    console.log('[ARMADA MCP] Shutdown complete');
+    process.exit(0);
+  }
 }
 
 // Start the server
 const server = new MCPServer();
 server.start();
 
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('[ARMADA MCP] Shutting down...');
-  process.exit(0);
-});
-
-process.on('SIGTERM', () => {
-  console.log('[ARMADA MCP] Shutting down...');
-  process.exit(0);
-});
+// Graceful shutdown handlers
+process.on('SIGINT', () => server.gracefulShutdown());
+process.on('SIGTERM', () => server.gracefulShutdown());

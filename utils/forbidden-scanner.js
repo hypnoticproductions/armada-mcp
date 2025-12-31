@@ -37,6 +37,13 @@ class ForbiddenScanner {
   }
 
   /**
+   * Escape special regex characters to prevent injection
+   */
+  escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  /**
    * Scan content for forbidden words
    */
   scan(content, corridor = 'general') {
@@ -55,8 +62,9 @@ class ForbiddenScanner {
           lineNumber: this.findLineNumber(content, word)
         });
 
-        // Remove or mask the word
-        cleanedContent = cleanedContent.replace(new RegExp(word, 'gi'), '█'.repeat(word.length));
+        // Remove or mask the word (escape special regex characters)
+        const escapedWord = this.escapeRegex(word);
+        cleanedContent = cleanedContent.replace(new RegExp(escapedWord, 'gi'), '█'.repeat(word.length));
       }
     }
 
@@ -65,7 +73,9 @@ class ForbiddenScanner {
     for (const word of corridorForbidden) {
       if (lowerContent.includes(word.toLowerCase())) {
         // Only flag if it appears to be the main language (not code-switching)
-        const pattern = new RegExp(`\\b${word.trim()}\\b`, 'i');
+        // Escape special regex characters to prevent injection
+        const escapedWord = this.escapeRegex(word.trim());
+        const pattern = new RegExp(`\\b${escapedWord}\\b`, 'i');
         if (pattern.test(lowerContent)) {
           flags.push({
             severity: 'high',
