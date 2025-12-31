@@ -72,13 +72,10 @@ class MCPServer {
   }
 
   start() {
-    // Create WebSocket server
-    this.wss = new WebSocket.Server({ port: this.port });
-
     console.log(`[ARMADA MCP] Server starting on port ${this.port}`);
     console.log(`[ARMADA MCP] Environment: ${process.env.NODE_ENV || 'development'}`);
 
-    // Create HTTP server for health checks
+    // Create HTTP server for health checks and WebSocket upgrades
     const http = require('http');
     this.httpServer = http.createServer((req, res) => {
       if (req.url === '/health') {
@@ -98,14 +95,18 @@ class MCPServer {
       }
     });
 
+    // Attach WebSocket server to HTTP server
+    this.wss = new WebSocket.Server({ server: this.httpServer });
+
     // Add error handler for HTTP server
     this.httpServer.on('error', (error) => {
       if (error.code === 'EADDRINUSE') {
-        console.error(`[ARMADA MCP] Health check port ${this.port + 1} already in use`);
+        console.error(`[ARMADA MCP] Port ${this.port} already in use`);
         console.log('[ARMADA MCP] Trying alternative port...');
         // Try next port
         setTimeout(() => {
-          this.httpServer.listen(this.port + 2);
+          this.port = this.port + 1;
+          this.httpServer.listen(this.port);
         }, 1000);
       } else {
         console.error('[ARMADA MCP] HTTP server error:', error);
@@ -113,8 +114,10 @@ class MCPServer {
       }
     });
 
-    this.httpServer.listen(this.port + 1, () => {
-      console.log(`[ARMADA MCP] Health check server on port ${this.port + 1}`);
+    this.httpServer.listen(this.port, () => {
+      console.log(`[ARMADA MCP] Server listening on port ${this.port}`);
+      console.log(`[ARMADA MCP] WebSocket endpoint: ws://localhost:${this.port}`);
+      console.log(`[ARMADA MCP] Health check endpoint: http://localhost:${this.port}/health`);
     });
 
     this.wss.on('connection', (ws, req) => {
